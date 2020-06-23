@@ -30,3 +30,5 @@ Requires
 * linux
 * videoforlinux
 * pyalsaaudio: `pip install pyalsaaudio`
+* ffmpeg-python: `pip install ffmpeg-python`
+* numpy: `pip install numpy`
