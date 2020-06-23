@@ -1,0 +1,10 @@
+[Unit]
+Description = Creates a dummy cam with with my bitizen avatar
+After = network.target
+
+[Service]
+ExecStart = /usr/bin/ffmpeg -re -loop 1 -i /home/rosie/Dev/perso/chatgif/images/VID_%02d.jpg -vcodec rawvideo -pix_fmt yuv420p -threads 0 -f v4l2 /dev/video0
+Restart = always
+
+[Install]
+WantedBy = multi-user.target
