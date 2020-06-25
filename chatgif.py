@@ -6,6 +6,7 @@ import sys
 import time
 import audioop
 import alsaaudio
+import random
 
 
 # Open the device in nonblocking capture mode. The last argument could
@@ -36,6 +37,9 @@ PAUSEIMG = os.path.join(EXEC_PATH, "images/{0}/{0}_pause.jpg".format(CHAR_NAME))
 SMILEIMG = os.path.join(EXEC_PATH, "images/{0}/{0}_smile.jpg".format(CHAR_NAME))
 TLKIMG = os.path.join(EXEC_PATH, "images/{0}/{0}_talk.jpg".format(CHAR_NAME))
 THMBIMG = os.path.join(EXEC_PATH, "images/{0}/{0}_thumbup.jpg".format(CHAR_NAME))
+BLINKIMG = os.path.join(EXEC_PATH, "images/{0}/{0}_blink.jpg".format(CHAR_NAME))
+SCRATCH1 = os.path.join(EXEC_PATH, "images/{0}/{0}_scratch1.jpg".format(CHAR_NAME))
+SCRATCH2 = os.path.join(EXEC_PATH, "images/{0}/{0}_scratch2.jpg".format(CHAR_NAME))
 
 
 #interactions
@@ -62,8 +66,26 @@ def thumbup(duration=1):
     for i in range(2):
         shutil.copyfile(PAUSEIMG, os.path.join(EXEC_PATH, "images/VID_{:02d}.jpg".format(i)))
 
+def blink():
+    for i in range(2):
+        shutil.copyfile(BLINKIMG, os.path.join(EXEC_PATH, "images/VID_{:02d}.jpg".format(i)))
+    time.sleep(0.1)
+    for i in range(2):
+        shutil.copyfile(PAUSEIMG, os.path.join(EXEC_PATH, "images/VID_{:02d}.jpg".format(i)))
+
+def scratch():
+    shutil.copyfile(SCRATCH1, os.path.join(EXEC_PATH, "images/VID_00.jpg"))
+    shutil.copyfile(SCRATCH2, os.path.join(EXEC_PATH, "images/VID_01.jpg"))
+    time.sleep(0.7)
+    for i in range(2):
+        shutil.copyfile(PAUSEIMG, os.path.join(EXEC_PATH, "images/VID_{:02d}.jpg".format(i)))
+
 
 def listen(input_audio, threshold=800):
+    sleeptime = 0.01
+    funcs = [scratch, blink, blink]
+    random_delay = random.randrange(2,20)/sleeptime
+    delay = 0
     blah = False
     while True:
         try:
@@ -77,13 +99,17 @@ def listen(input_audio, threshold=800):
                 elif audio_data <= threshold and blah:
                     idle()
                     blah = False
+            if delay == random_delay:
+                random.choice(funcs)()
+                delay = 0
             if os.path.isfile(SMILE):
                 os.remove(SMILE)
                 smile()
             if os.path.isfile(THUMB):
                 os.remove(THUMB)
                 thumbup()
-            time.sleep(.01)
+            time.sleep(sleeptime)
+            delay +=1
         except KeyboardInterrupt:
             print '\nExiting chatgif...'
             for i in range(2):
