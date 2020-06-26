@@ -30,7 +30,7 @@ THUMB =  "/tmp/chatgif.thumb"
 #SETTINGS
 CHAR_NAME = 'Frog_Suit'
 # animation specifics settings
-FRAMERATE = 12 #frames per seconds
+FRAMERATE = 30 #frames per seconds
 THUMB_DURATION = 1 #seconds
 SMILE_DURATION = 1 #seconds
 SCRATCH_DURATON = 0.7 #seconds
@@ -82,7 +82,7 @@ def get_audio_sample(inp):
         return 0
 
 
-class MyVideoSource(virtualvideo.VideoSource):
+class BitizenFeed(virtualvideo.VideoSource):
     def __init__(self):
         self.img = cv2.imread(PAUSEIMG)
         size = self.img.shape
@@ -234,12 +234,13 @@ class MyVideoSource(virtualvideo.VideoSource):
                                 time.sleep(1.0/FRAMERATE)
                                 frame += 1
             except KeyboardInterrupt:
-                print '\nExiting chatgif...'
+                print '\nExiting bitizen_kam...'
+                print 'press Ctrl+C again to quit' #why???
                 sys.exit()
                 return
 
 
-vidsrc = MyVideoSource()
+vidsrc = BitizenFeed()
 fvd = virtualvideo.FakeVideoDevice()
 fvd.init_input(vidsrc)
 fvd.init_output(0, 480, 360, fps=FRAMERATE)
