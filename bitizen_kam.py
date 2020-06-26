@@ -30,7 +30,7 @@ THUMB =  "/tmp/chatgif.thumb"
 #SETTINGS
 CHAR_NAME = 'Frog_Suit'
 # animation specifics settings
-FRAMERATE = 30 #frames per seconds
+FRAMERATE = 12 #frames per seconds
 THUMB_DURATION = 1 #seconds
 SMILE_DURATION = 1 #seconds
 SCRATCH_DURATON = 0.7 #seconds
@@ -44,15 +44,19 @@ SCRATCH_PERCENT = 0.3
 AUDIO_THRESHOLD = 1500
 
 
+# I am assuming here that I can define the persiod size depending on the rate ans the nb of samples i need.
+# doc does not seem to say this, but those presets works for me. Ill understand later...
+SAMPLES = 4
+AUDIO_RATE = 8000 #Hz
+
 # Open the device in nonblocking capture mode. The last argument could
 # just as well have been zero for blocking mode. Then we could have
 # left out the sleep call in the bottom of the loop
 inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NONBLOCK)
-#inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NORMAL)
 
 # Set attributes: Mono, 8000 Hz, 16 bit little endian samples
 inp.setchannels(1)
-inp.setrate(8000)
+inp.setrate(AUDIO_RATE)
 inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
 
 # The period size controls the internal number of frames per period.
@@ -62,7 +66,8 @@ inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
 # This means that the reads below will return either 320 bytes of data
 # or 0 bytes of data. The latter is possible because we are in nonblocking
 # mode.
-inp.setperiodsize(160)
+
+inp.setperiodsize(AUDIO_RATE/SAMPLES) 
 
 #interactions
 SMILE =  "/tmp/chatgif.smile"
@@ -174,69 +179,63 @@ class MyVideoSource(virtualvideo.VideoSource):
             return 0
 
     def generator(self):
+        # idle trigger
+        frame = 0
+        randomisation_delay = random.randrange(2,20) * FRAMERATE
         while True:
+            sample_length, sample_data = inp.read()
             try:
-                sec = 0
-                audio_data = get_audio_sample(inp)
-                # talking trigger
-                while audio_data > AUDIO_THRESHOLD:
-                    for img in self.talk_sequence:
-                        yield img
-                        time.sleep(1.0/FRAMERATE)
-                    audio_data = get_audio_sample(inp)
-                    print 'audiodata', audio_data
-                # idle trigger
-                frame = 0
-                while audio_data <= AUDIO_THRESHOLD:
-                    print 'frame', frame
-                    if frame%FRAMERATE ==0 and frame != 0:
-                        sec += 1
-                    print sec, 'secondes'
-                    randomisation_delay = random.randrange(2,20) * FRAMERATE
-                    # smile if triggered
-                    if self.smile:
-                        smile_frame = 0
-                        while frame < FRAMERATE * SMILE_DURATION:
-                            for img in self.smile_sequence:
-                                yield img
-                                time.sleep(1.0/FRAMERATE)
-                                smile_frame += 1
-                    # thumb up if triggered
-                    elif self.thumb:
-                        thumb_frame = 0
-                        while frame < FRAMERATE * THUMB_DURATION:
-                            for img in self.thumb_sequence:
-                                yield img
-                                time.sleep(1.0/FRAMERATE)
-                                thumb_frame += 1
-                    # scratch or blink if it meets randomization
-                    elif frame == randomisation_delay:
-                        action = numpy.random.choice(['blink', 'scratch'], p=[BLINK_PERCENT, SCRATCH_PERCENT])
-                        # blink
-                        if action == 'blink':
-                            for img in self.blink_sequence:
-                                yield img
-                                time.sleep(1.0/FRAMERATE)
-                            frame = 0
-                        # or scratch
-                        elif action == 'scratch':
-                            scratch_frame = 0
-                            while scratch_frame < FRAMERATE * SCRATCH_DURATON:
-                                for img in self.scratch_sequence:
-                                    yield img
-                                    time.sleep(1.0/FRAMERATE)
-                                    scratch_frame += 1
-                            frame = 0
-                    # else idle
-                    else:
-                        for img in self.idle_sequence:
+                if sample_length:
+                    audio_data = audioop.max(sample_data, 2)
+                    # talking trigger
+                    if audio_data > AUDIO_THRESHOLD:
+                        for img in self.talk_sequence:
                             yield img
                             time.sleep(1.0/FRAMERATE)
-                            frame += 1
-                        audio_data = get_audio_sample(inp)
-                        print 'audiodata', audio_data
+                    if audio_data <= AUDIO_THRESHOLD:
+                        # smile if triggered
+                        if self.smile:
+                            smile_frame = 0
+                            while smile_frame < FRAMERATE * SMILE_DURATION:
+                                for img in self.smile_sequence:
+                                    yield img
+                                    time.sleep(1.0/FRAMERATE)
+                                    smile_frame += 1
+                        # thumb up if triggered
+                        elif self.thumb:
+                            thumb_frame = 0
+                            while thumb_frame < FRAMERATE * THUMB_DURATION:
+                                for img in self.thumb_sequence:
+                                    yield img
+                                    time.sleep(1.0/FRAMERATE)
+                                    thumb_frame += 1
+                        # scratch or blink if it meets randomization
+                        elif frame == randomisation_delay:
+                            action = numpy.random.choice(['blink', 'scratch'], p=[BLINK_PERCENT, SCRATCH_PERCENT])
+                            # blink
+                            if action == 'blink':
+                                for img in self.blink_sequence:
+                                    yield img
+                                    time.sleep(1.0/FRAMERATE)
+                            # or scratch
+                            elif action == 'scratch':
+                                scratch_frame = 0
+                                while scratch_frame < FRAMERATE * SCRATCH_DURATON:
+                                    for img in self.scratch_sequence:
+                                        yield img
+                                        time.sleep(1.0/FRAMERATE)
+                                        scratch_frame += 1
+                            frame = 0
+                            randomisation_delay = random.randrange(2,20) * FRAMERATE
+                        # else idle
+                        else:
+                            for img in self.idle_sequence:
+                                yield img
+                                time.sleep(1.0/FRAMERATE)
+                                frame += 1
             except KeyboardInterrupt:
                 print '\nExiting chatgif...'
+                sys.exit()
                 return
 
 
