@@ -47,7 +47,7 @@ AUDIO_THRESHOLD = 1500
 # I am assuming here that I can define the persiod size depending on the rate ans the nb of samples i need.
 # doc does not seem to say this, but those presets works for me. Ill understand later...
 SAMPLES = 4
-AUDIO_RATE = 8000 #Hz
+AUDIO_RATE = 22500 #Hz
 
 # Open the device in nonblocking capture mode. The last argument could
 # just as well have been zero for blocking mode. Then we could have
@@ -67,7 +67,8 @@ inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
 # or 0 bytes of data. The latter is possible because we are in nonblocking
 # mode.
 
-inp.setperiodsize(AUDIO_RATE/SAMPLES) 
+inp.setperiodsize(4000) 
+#inp.setperiodsize(AUDIO_RATE/SAMPLES)
 
 #interactions
 SMILE =  "/tmp/chatgif.smile"
@@ -180,18 +181,26 @@ class BitizenFeed(virtualvideo.VideoSource):
 
     def generator(self):
         # idle trigger
+        init_time = time.time()
         frame = 0
+        total_frames = 0
         randomisation_delay = random.randrange(2,20) * FRAMERATE
+        no_sample_length = 0
         while True:
+            print time.time()-init_time
             sample_length, sample_data = inp.read()
             try:
                 if sample_length:
+                    print no_sample_length
+                    no_sample_length = 0
+                    print "looping; frame {}".format(total_frames)
                     audio_data = audioop.max(sample_data, 2)
                     # talking trigger
                     if audio_data > AUDIO_THRESHOLD:
                         for img in self.talk_sequence:
                             yield img
                             time.sleep(1.0/FRAMERATE)
+                            total_frames += 1
                     if audio_data <= AUDIO_THRESHOLD:
                         # smile if triggered
                         if self.smile:
@@ -199,6 +208,7 @@ class BitizenFeed(virtualvideo.VideoSource):
                             while smile_frame < FRAMERATE * SMILE_DURATION:
                                 for img in self.smile_sequence:
                                     yield img
+                                    total_frames += 1
                                     time.sleep(1.0/FRAMERATE)
                                     smile_frame += 1
                         # thumb up if triggered
@@ -207,6 +217,7 @@ class BitizenFeed(virtualvideo.VideoSource):
                             while thumb_frame < FRAMERATE * THUMB_DURATION:
                                 for img in self.thumb_sequence:
                                     yield img
+                                    total_frames += 1
                                     time.sleep(1.0/FRAMERATE)
                                     thumb_frame += 1
                         # scratch or blink if it meets randomization
@@ -216,6 +227,7 @@ class BitizenFeed(virtualvideo.VideoSource):
                             if action == 'blink':
                                 for img in self.blink_sequence:
                                     yield img
+                                    total_frames += 1
                                     time.sleep(1.0/FRAMERATE)
                             # or scratch
                             elif action == 'scratch':
@@ -223,6 +235,7 @@ class BitizenFeed(virtualvideo.VideoSource):
                                 while scratch_frame < FRAMERATE * SCRATCH_DURATON:
                                     for img in self.scratch_sequence:
                                         yield img
+                                        total_frames += 1
                                         time.sleep(1.0/FRAMERATE)
                                         scratch_frame += 1
                             frame = 0
@@ -231,8 +244,16 @@ class BitizenFeed(virtualvideo.VideoSource):
                         else:
                             for img in self.idle_sequence:
                                 yield img
+                                total_frames += 1
                                 time.sleep(1.0/FRAMERATE)
                                 frame += 1
+                else:
+                    for img in self.idle_sequence:
+                        yield img
+                        total_frames += 1
+                        time.sleep(1.0/FRAMERATE)
+                        frame += 1
+                    no_sample_length += 1
             except KeyboardInterrupt:
                 print '\nExiting bitizen_kam...'
                 print 'press Ctrl+C again to quit' #why???
@@ -243,6 +264,6 @@ class BitizenFeed(virtualvideo.VideoSource):
 vidsrc = BitizenFeed()
 fvd = virtualvideo.FakeVideoDevice()
 fvd.init_input(vidsrc)
-fvd.init_output(0, 480, 360, fps=FRAMERATE)
-fvd.run()
+fvd.init_output(0, 480, 360, fps=30)
+fvd.run(quiet=False)
 

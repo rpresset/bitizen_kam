@@ -99,7 +99,7 @@ class FakeVideoDevice():
         self.running = False
         self.ffmpeg_proc.terminate()
 
-    def run(self,quiet = True):
+    def run(self, quiet=True):
         """
         Runs an endless loop of consuming images from the source and sending them to the Device
         Syntax:
@@ -123,6 +123,7 @@ class FakeVideoDevice():
             image = next(img_gen).astype(np.uint8)
 
             if image is None:
+                print 'no image yeld... terminating'
                 self.ffmpeg_proc.terminate()
                 self.running = False
                 break
