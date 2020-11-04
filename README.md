@@ -1,3 +1,6 @@
+Bitizen Kam is a interactive gif acting as a webcam emulator, so you can interact with teammates wven with no camera.
+The frog talks when you talk, and can smile and thumb up with keystrokes
+
 
 Creating i3 shortcuts
 ---------------------
@@ -31,9 +34,7 @@ TODOS
 
 Requires
 --------
-* linux
 * videoforlinux utils `v4l-utils`
 * v4l2loopback `https://github.com/umlaeute/v4l2loopback`
 * pyalsaaudio: `pip install pyalsaaudio`
-* ffmpeg-python: `pip install ffmpeg-python`
-* numpy: `pip install numpy`
+* opencv-python `pip install opencv-python`

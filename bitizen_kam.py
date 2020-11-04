@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import os
 import shutil
 import sys
@@ -13,19 +11,6 @@ import cv2
 
 EXEC_PATH = os.path.dirname(os.path.abspath(__file__))
 
-CHAR_NAME = 'Frog_Suit'
-
-PAUSEIMG = os.path.join(EXEC_PATH, "images/{0}/{0}_pause.jpg".format(CHAR_NAME))
-SMILEIMG = os.path.join(EXEC_PATH, "images/{0}/{0}_smile.jpg".format(CHAR_NAME))
-TLKIMG = os.path.join(EXEC_PATH, "images/{0}/{0}_talk.jpg".format(CHAR_NAME))
-THMBIMG = os.path.join(EXEC_PATH, "images/{0}/{0}_thumbup.jpg".format(CHAR_NAME))
-SCRATCH1 = os.path.join(EXEC_PATH, "images/{0}/{0}_scratch1.jpg".format(CHAR_NAME))
-SCRATCH2 = os.path.join(EXEC_PATH, "images/{0}/{0}_scratch2.jpg".format(CHAR_NAME))
-BLINKIMG = os.path.join(EXEC_PATH, "images/{0}/{0}_blink.jpg".format(CHAR_NAME))
-
-#interactions
-SMILE =  "/tmp/chatgif.smile"
-THUMB =  "/tmp/chatgif.thumb"
 
 #SETTINGS
 CHAR_NAME = 'Frog_Suit'
@@ -41,20 +26,28 @@ SCRATCH_FREQUENCY = 8 #hertz
 BLINK_PERCENT = 0.7
 SCRATCH_PERCENT = 0.3
 # audio_settings
-AUDIO_THRESHOLD = 1500
-
-
-# I am assuming here that I can define the persiod size depending on the rate ans the nb of samples i need.
-# doc does not seem to say this, but those presets works for me. Ill understand later...
-SAMPLES = 4
+AUDIO_THRESHOLD = 400
 AUDIO_RATE = 22500 #Hz
+
+PAUSEIMG = os.path.join(EXEC_PATH, "images/{0}/{0}_pause.jpg".format(CHAR_NAME))
+SMILEIMG = os.path.join(EXEC_PATH, "images/{0}/{0}_smile.jpg".format(CHAR_NAME))
+TLKIMG = os.path.join(EXEC_PATH, "images/{0}/{0}_talk.jpg".format(CHAR_NAME))
+THMBIMG = os.path.join(EXEC_PATH, "images/{0}/{0}_thumbup.jpg".format(CHAR_NAME))
+SCRATCH1 = os.path.join(EXEC_PATH, "images/{0}/{0}_scratch1.jpg".format(CHAR_NAME))
+SCRATCH2 = os.path.join(EXEC_PATH, "images/{0}/{0}_scratch2.jpg".format(CHAR_NAME))
+BLINKIMG = os.path.join(EXEC_PATH, "images/{0}/{0}_blink.jpg".format(CHAR_NAME))
+
+#interactions
+SMILE =  "/tmp/chatgif.smile"
+THUMB =  "/tmp/chatgif.thumb"
+
 
 # Open the device in nonblocking capture mode. The last argument could
 # just as well have been zero for blocking mode. Then we could have
 # left out the sleep call in the bottom of the loop
 inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NONBLOCK)
 
-# Set attributes: Mono, 8000 Hz, 16 bit little endian samples
+# Set attributes: Mono, 22500 Hz, 16 bit little endian samples
 inp.setchannels(1)
 inp.setrate(AUDIO_RATE)
 inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
@@ -66,9 +59,7 @@ inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
 # This means that the reads below will return either 320 bytes of data
 # or 0 bytes of data. The latter is possible because we are in nonblocking
 # mode.
-
-inp.setperiodsize(4000) 
-#inp.setperiodsize(AUDIO_RATE/SAMPLES)
+inp.setperiodsize(2000)
 
 #interactions
 SMILE =  "/tmp/chatgif.smile"
@@ -79,7 +70,7 @@ def get_audio_sample(inp):
     sample_length, sample_data = inp.read()
     if sample_length:
         return audioop.max(sample_data, 2)
-    else: 
+    else:
         return 0
 
 
@@ -130,9 +121,9 @@ class BitizenFeed(virtualvideo.VideoSource):
         Actually not. It seems not working this way. TBD
         """
         if not self._talk_sequence:
-            for _ in range(FRAMERATE / TALK_FREQUENCY):
+            for _ in range(FRAMERATE // TALK_FREQUENCY):
                 self._talk_sequence.append(cv2.imread(TLKIMG))
-            for _ in range(FRAMERATE / TALK_FREQUENCY):
+            for _ in range(FRAMERATE // TALK_FREQUENCY):
                 self._talk_sequence.append(cv2.imread(PAUSEIMG))
         return self._talk_sequence
 
@@ -153,16 +144,16 @@ class BitizenFeed(virtualvideo.VideoSource):
     @property
     def blink_sequence(self):
         if not self._blink_sequence:
-            for _ in range(FRAMERATE / BLINK_FREQUENCY):
+            for _ in range(FRAMERATE // BLINK_FREQUENCY):
                 self._blink_sequence.append(cv2.imread(BLINKIMG))
         return self._blink_sequence
 
     @property
     def scratch_sequence(self):
         if not self._scratch_sequence:
-            for _ in range(FRAMERATE / SCRATCH_FREQUENCY):
+            for _ in range(FRAMERATE // SCRATCH_FREQUENCY):
                 self._scratch_sequence.append(cv2.imread(SCRATCH1))
-            for _ in range(FRAMERATE / SCRATCH_FREQUENCY):
+            for _ in range(FRAMERATE // SCRATCH_FREQUENCY):
                 self._scratch_sequence.append(cv2.imread(SCRATCH2))
         return self._scratch_sequence
 
@@ -187,14 +178,13 @@ class BitizenFeed(virtualvideo.VideoSource):
         randomisation_delay = random.randrange(2,20) * FRAMERATE
         no_sample_length = 0
         while True:
-            print time.time()-init_time
             sample_length, sample_data = inp.read()
+            print(sample_length)
             try:
                 if sample_length:
-                    print no_sample_length
                     no_sample_length = 0
-                    print "looping; frame {}".format(total_frames)
                     audio_data = audioop.max(sample_data, 2)
+                    print('audio_data: {}'.format(audio_data))
                     # talking trigger
                     if audio_data > AUDIO_THRESHOLD:
                         for img in self.talk_sequence:
@@ -255,15 +245,18 @@ class BitizenFeed(virtualvideo.VideoSource):
                         frame += 1
                     no_sample_length += 1
             except KeyboardInterrupt:
-                print '\nExiting bitizen_kam...'
-                print 'press Ctrl+C again to quit' #why???
+                print('\nExiting bitizen_kam...')
+                print ('press Ctrl+C again to quit') #why???
                 sys.exit()
                 return
 
 
-vidsrc = BitizenFeed()
-fvd = virtualvideo.FakeVideoDevice()
-fvd.init_input(vidsrc)
-fvd.init_output(0, 480, 360, fps=30)
-fvd.run(quiet=False)
+def main():
+    vidsrc = BitizenFeed()
+    fvd = virtualvideo.FakeVideoDevice()
+    fvd.init_input(vidsrc)
+    fvd.init_output(0, 480, 360, fps=30)
+    fvd.run(quiet=False)
 
+if __name__ == '__main__':
+    main()
