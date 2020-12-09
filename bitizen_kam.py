@@ -40,11 +40,13 @@ BLINKIMG = os.path.join(EXEC_PATH, "images/{0}/{0}_blink.jpg".format(CHAR_NAME))
 SMILE = "/tmp/chatgif.smile"
 THUMB = "/tmp/chatgif.thumb"
 
+AUDIO_DEVICE = 'pulse'
 
 # Open the device in nonblocking capture mode. The last argument could
 # just as well have been zero for blocking mode. Then we could have
 # left out the sleep call in the bottom of the loop
-inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NONBLOCK)
+inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NONBLOCK, device=AUDIO_DEVICE)
+print(alsaaudio.pcms())
 
 # Set attributes: Mono, 22500 Hz, 16 bit little endian samples
 inp.setchannels(1)
