@@ -1,11 +1,10 @@
 import os
-import shutil
 import sys
-import numpy
 import time
+import random
 import audioop
 import alsaaudio
-import random
+import numpy
 import virtualvideo
 import cv2
 
@@ -38,8 +37,8 @@ SCRATCH2 = os.path.join(EXEC_PATH, "images/{0}/{0}_scratch2.jpg".format(CHAR_NAM
 BLINKIMG = os.path.join(EXEC_PATH, "images/{0}/{0}_blink.jpg".format(CHAR_NAME))
 
 #interactions
-SMILE =  "/tmp/chatgif.smile"
-THUMB =  "/tmp/chatgif.thumb"
+SMILE = "/tmp/chatgif.smile"
+THUMB = "/tmp/chatgif.thumb"
 
 
 # Open the device in nonblocking capture mode. The last argument could
@@ -61,17 +60,11 @@ inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
 # mode.
 inp.setperiodsize(2000)
 
-#interactions
-SMILE =  "/tmp/chatgif.smile"
-THUMB =  "/tmp/chatgif.thumb"
-
-
 def get_audio_sample(inp):
     sample_length, sample_data = inp.read()
     if sample_length:
         return audioop.max(sample_data, 2)
-    else:
-        return 0
+    return 0
 
 
 class BitizenFeed(virtualvideo.VideoSource):
@@ -79,7 +72,7 @@ class BitizenFeed(virtualvideo.VideoSource):
         self.img = cv2.imread(PAUSEIMG)
         size = self.img.shape
         #opencv's shape is y,x,channels
-        self._size = (size[1],size[0])
+        self._size = (size[1], size[0])
         self._idle_sequence = []
         self._talk_sequence = []
         self._smile_sequence = []
@@ -95,8 +88,8 @@ class BitizenFeed(virtualvideo.VideoSource):
         if os.path.isfile(THUMB):
             os.remove(THUMB)
             return True
-        else:
-            return False
+        return False
+
     @property
     def smile(self):
         """
@@ -105,8 +98,7 @@ class BitizenFeed(virtualvideo.VideoSource):
         if os.path.isfile(SMILE):
             os.remove(SMILE)
             return True
-        else:
-            return False
+        return False
 
     @property
     def idle_sequence(self):
