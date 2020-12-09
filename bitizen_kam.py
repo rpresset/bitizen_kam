@@ -7,6 +7,20 @@ import alsaaudio
 import numpy
 import virtualvideo
 import cv2
+import logging
+
+DEBUG = False
+
+if DEBUG:
+    DEBUGLEVEL = logging.DEBUG
+else:
+    DEBUGLEVEL = logging.INFO
+
+logger = logging.getLogger(__name__)
+logger.setLevel(DEBUGLEVEL)
+ch = logging.StreamHandler()
+ch.setLevel(DEBUGLEVEL)
+logger.addHandler(ch)
 
 EXEC_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -46,7 +60,7 @@ AUDIO_DEVICE = 'pulse'
 # just as well have been zero for blocking mode. Then we could have
 # left out the sleep call in the bottom of the loop
 inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NONBLOCK, device=AUDIO_DEVICE)
-print(alsaaudio.pcms())
+logger.debug(alsaaudio.pcms())
 
 # Set attributes: Mono, 22500 Hz, 16 bit little endian samples
 inp.setchannels(1)
@@ -173,12 +187,12 @@ class BitizenFeed(virtualvideo.VideoSource):
         no_sample_length = 0
         while True:
             sample_length, sample_data = inp.read()
-            print(sample_length)
+            logger.debug(sample_length)
             try:
                 if sample_length:
                     no_sample_length = 0
                     audio_data = audioop.max(sample_data, 2)
-                    print('audio_data: {}'.format(audio_data))
+                    logger.debug('audio_data: {}'.format(audio_data))
                     # talking trigger
                     if audio_data > AUDIO_THRESHOLD:
                         for img in self.talk_sequence:
@@ -239,8 +253,7 @@ class BitizenFeed(virtualvideo.VideoSource):
                         frame += 1
                     no_sample_length += 1
             except KeyboardInterrupt:
-                print('\nExiting bitizen_kam...')
-                print ('press Ctrl+C again to quit') #why???
+                logger.info('\nExiting bitizen_kam...')
                 sys.exit()
                 return
 
@@ -250,7 +263,7 @@ def main():
     fvd = virtualvideo.FakeVideoDevice()
     fvd.init_input(vidsrc)
     fvd.init_output(0, 480, 360, fps=30)
-    fvd.run(quiet=False)
+    fvd.run(quiet=not DEBUG)
 
 if __name__ == '__main__':
     main()
